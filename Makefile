@@ -1,7 +1,7 @@
 # Compiler and flags# Compiler and flags
 # Variables de configuration
 CC = gcc
-CFLAGS = -Wall -g ${INCLUDES}    # Option pour inclure les fichiers .h générés
+CFLAGS = -Wall -Wextra -Wpedantic -g ${INCLUDES}    # Option pour inclure les fichiers .h générés
 
 SRC_DIR = src
 BUILD_DIR = build
