@@ -1,64 +1,33 @@
-# Detect system OS.
-ifeq ($(OS),Windows_NT)
-	detected_OS := Windows
-else
-	detected_OS := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-endif
+# Compiler and flags# Compiler and flags
+# Variables de configuration
+CC = gcc
+CFLAGS = -Wall -g ${INCLUDES}    # Option pour inclure les fichiers .h générés
 
-C_SRCS=$(shell find src -name *.c)
+SRC_DIR = src
+BUILD_DIR = build
+BUILD_INCLUDE_DIR = $(BUILD_DIR)/include
+BIN_DIR = bin
+INCLUDE_DIR = include
 
-OBJS=$(C_SRCS:.c=.o)
+# Fichiers sources
+SRC = $(wildcard $(SRC_DIR)/*.c)
+OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+INCLUDES = -I $(INCLUDE_DIR) -I $(BUILD_INCLUDE_DIR)
 
-# Modify the executable name by yourself.
-ifeq (,$(LIBRARY))
-	LIBRARY=libalgebra
-endif
+TARGET = $(BIN_DIR)/executable.exe
 
-ifeq ($(detected_OS),Windows)
-	DYNAMIC_LIB=$(LIBRARY).dll
-else
-ifeq ($(detected_OS),Darwin)
-	DYNAMIC_LIB=$(LIBRARY).dylib
-else
-	DYNAMIC_LIB=$(LIBRARY).so
-endif  # Darwin
-endif  # Windows
-STATIC_LIB=$(LIBRARY).a
+all: $(TARGET)
 
-# Set the C standard.
-ifeq (,$(C_STD))
-	C_STD=c11
-endif
+$(TARGET): $(OBJ)
+	mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) $^ -o $@
 
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: all dynamic static clean
-
-all: dynamic
-
-dynamic: dist/$(DYNAMIC_LIB)
-
-dist/$(DYNAMIC_LIB): $(OBJS)
-	$(CC) -shared -o dist/$(DYNAMIC_LIB) $(OBJS)
-
-static: dist/$(STATIC_LIB)
-
-dist/$(STATIC_LIB): $(OBJS)
-ifeq ($(detected_OS),Darwin)
-	libtool -o dist/$(STATIC_LIB) $(OBJS)
-else
-	$(AR) rcs -o dist/$(STATIC_LIB) $(OBJS)
-endif
-
-%.o:%.c
-ifeq (,$(MAKECMDGOALS))
-	$(CC) -fPIC -std=$(C_STD) -c $< -o $@ $(CFLAGS) -I include
-else
-ifeq (dynamic,$(MAKECMDGOALS))
-	$(CC) -fPIC -std=$(C_STD) -c $< -o $@ $(CFLAGS) -I include
-else
-	$(CC) -std=$(C_STD) -c $< -o $@ $(CFLAGS) -I include
-endif  # make dynamic
-endif  # make
-
+# Nettoyage des fichiers générés
 clean:
-	$(RM) dist/$(DYNAMIC_LIB) dist/$(STATIC_LIB) $(OBJS)
+	rm -rf $(BUILD_DIR)/* $(BIN_DIR)/* $(BUILD_INCLUDE_DIR)/*
+
+# Phony targets
+.PHONY: all clean
